@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diffie-Hellman Key Exchange Simulator</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent1: #7209b7;
+            --accent2: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --warning: #ffba08;
+            --danger: #f94144;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7ff;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: var(--secondary);
+            margin-bottom: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .simulation-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .party {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .party-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            margin-right: 15px;
+        }
+
+        .alice-avatar {
+            background-color: #ffd6ff;
+            color: var(--accent1);
+        }
+
+        .bob-avatar {
+            background-color: #c8e7ff;
+            color: var(--primary);
+        }
+
+        .party-content {
+            margin-bottom: 20px;
+        }
+
+        .param {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+
+        .param-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .param-value {
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: var(--secondary);
+        }
+
+        button.secondary {
+            background-color: var(--accent1);
+        }
+
+        button.secondary:hover {
+            background-color: var(--accent2);
+        }
+
+        .explanation {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .step {
+            margin-bottom: 15px;
+            padding-left: 20px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .step-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        .highlight {
+            background-color: var(--warning);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .shared-key {
+            background-color: #e6f7ff;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .shared-key.visible {
+            display: block;
+        }
+
+        .base-finder {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .base-finder.visible {
+            display: block;
+        }
+
+        .base-result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .base-result.visible {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .simulation-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Diffie-Hellman Key Exchange Simulator</h1>
+            <p class="description">
+                This simulator demonstrates how two parties (User A and User B) can establish a shared secret key
+                over an insecure channel using the Diffie-Hellman key exchange protocol.
+            </p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="prime">Prime Number (p):</label>
+                <input type="number" id="prime" value="23" min="2">
+                <br><br>
+                <button id="find-base-btn" class="secondary">Find Suitable Base</button>
+            </div>
+
+            <div class="base-finder" id="base-finder">
+                <h3>Find a Suitable Base (Generator)</h3>
+                <p>For prime <span id="current-prime">23</span>, we need to find a number g where g is a primitive root
+                    modulo p.</p>
+                <button id="calculate-base-btn">Calculate Possible Bases</button>
+                <div class="base-result" id="base-result">
+                    <p>Suitable bases for prime <span id="result-prime">23</span>:</p>
+                    <div id="bases-list"></div>
+                    <button id="use-base-btn">Use This Base</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="base">Base Number (α):</label>
+                <input type="number" id="base" value="5" min="2">
+            </div>
+            <div class="control-group">
+                <label for="secret-a">User A's Secret (a):</label>
+                <input type="number" id="secret-a" value="4" min="1">
+            </div>
+            <div class="control-group">
+                <label for="secret-b">User B's Secret (b):</label>
+                <input type="number" id="secret-b" value="3" min="1">
+            </div>
+            <button id="calculate-btn">Calculate Exchange</button>
+        </div>
+
+        <div class="simulation-container">
+            <div class="party">
+                <div class="party-header">
+                    <div class="avatar alice-avatar">A</div>
+                    <h2>User A</h2>
+                </div>
+                <div class="party-content">
+                    <div class="param">
+                        <span class="param-label">Secret Number (a):</span>
+                        <span class="param-value" id="alice-secret">4</span>
+                    </div>
+                    <div class="param">
+                        <span class="param-label">Calculates Public Value (A = α<sup>a</sup> mod p):</span>
+                        <span class="param-value" id="alice-public">-</span>
+                    </div>
+                    <div class="param">
+                        <span class="param-label">Receives User B's Public Value (B):</span>
+                        <span class="param-value" id="alice-received">-</span>
+                    </div>
+                    <div class="param">
+                        <span class="param-label">Computes Shared Secret (s = B<sup>a</sup> mod p):</span>
+                        <span class="param-value" id="alice-shared">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="party">
+                <div class="party-header">
+                    <div class="avatar bob-avatar">B</div>
+                    <h2>User B</h2>
+                </div>
+                <div class="party-content">
+                    <div class="param">
+                        <span class="param-label">Secret Number (b):</span>
+                        <span class="param-value" id="bob-secret">3</span>
+                    </div>
+                    <div class="param">
+                        <span class="param-label">Calculates Public Value (B = α<sup>b</sup> mod p):</span>
+                        <span class="param-value" id="bob-public">-</span>
+                    </div>
+                    <div class="param">
+                        <span class="param-label">Receives User A's Public Value (A):</span>
+                        <span class="param-value" id="bob-received">-</span>
+                    </div>
+                    <div class="param">
+                        <span class="param-label">Computes Shared Secret (s = A<sup>b</sup> mod p):</span>
+                        <span class="param-value" id="bob-shared">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="shared-key" id="shared-key">
+            <h3>Shared Secret Key: <span id="shared-key-value">-</span></h3>
+            <p>Both parties now have the same secret key without ever transmitting it over the channel!</p>
+        </div>
+
+        <div class="explanation">
+            <h2>How Diffie-Hellman Key Exchange Works</h2>
+            <div class="step">
+                <div class="step-title">Step 1: Agreement on Public Parameters</div>
+                <p>User A and User B publicly agree to use a prime number <span class="highlight">p</span> and a base
+                    number
+                    <span class="highlight">α</span> (which is a primitive root modulo p).
+                </p>
+            </div>
+            <div class="step">
+                <div class="step-title">Step 2: Selection of Private Keys</div>
+                <p>User A selects a private key <span class="highlight">a</span> and User B selects a private key <span
+                        class="highlight">b</span>. These are kept secret.</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Step 3: Calculation of Public Keys</div>
+                <p>User A computes <span class="highlight">A = α<sup>a</sup> mod p</span> and sends it to User B.</p>
+                <p>User B computes <span class="highlight">B = α<sup>b</sup> mod p</span> and sends it to User A.</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Step 4: Calculation of Shared Secret</div>
+                <p>User A computes <span class="highlight">s = B<sup>a</sup> mod p</span></p>
+                <p>User B computes <span class="highlight">s = A<sup>b</sup> mod p</span></p>
+                <p>Both calculations yield the same result, which is the shared secret key.</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Why is this secure?</div>
+                <p>Even if an eavesdropper knows <span class="highlight">p</span>, <span class="highlight">α</span>,
+                    <span class="highlight">A</span>, and <span class="highlight">B</span>, it's computationally
+                    difficult to calculate the shared secret without knowing either <span class="highlight">a</span> or
+                    <span class="highlight">b</span> (this is known as the discrete logarithm problem).
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <footer style="text-align:center; margin-top:40px; color:#888;">
+        <p>
+            &copy; 2024 Diffie-Hellman Key Exchange Simulator.<br>
+            Developed by Theekshana Thennakoon (Thisula Development).
+        </p>
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const primeInput = document.getElementById('prime');
+            const baseInput = document.getElementById('base');
+            const secretAInput = document.getElementById('secret-a');
+            const secretBInput = document.getElementById('secret-b');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const findBaseBtn = document.getElementById('find-base-btn');
+            const baseFinder = document.getElementById('base-finder');
+            const baseResult = document.getElementById('base-result');
+            const basesList = document.getElementById('bases-list');
+            const calculateBaseBtn = document.getElementById('calculate-base-btn');
+            const useBaseBtn = document.getElementById('use-base-btn');
+            const currentPrime = document.getElementById('current-prime');
+            const resultPrime = document.getElementById('result-prime');
+
+            const aliceSecret = document.getElementById('alice-secret');
+            const alicePublic = document.getElementById('alice-public');
+            const aliceReceived = document.getElementById('alice-received');
+            const aliceShared = document.getElementById('alice-shared');
+
+            const bobSecret = document.getElementById('bob-secret');
+            const bobPublic = document.getElementById('bob-public');
+            const bobReceived = document.getElementById('bob-received');
+            const bobShared = document.getElementById('bob-shared');
+
+            const sharedKey = document.getElementById('shared-key');
+            const sharedKeyValue = document.getElementById('shared-key-value');
+
+            // Function to compute modular exponentiation: (base^exponent) % modulus
+            function modExp(base, exponent, modulus) {
+                if (modulus === 1) return 0;
+                let result = 1;
+                base = base % modulus;
+                while (exponent > 0) {
+                    if (exponent % 2 === 1) {
+                        result = (result * base) % modulus;
+                    }
+                    exponent = Math.floor(exponent / 2);
+                    base = (base * base) % modulus;
+                }
+                return result;
+            }
+
+            // Function to find all factors of a number
+            function findFactors(n) {
+                const factors = new Set();
+                for (let i = 1; i <= Math.sqrt(n); i++) {
+                    if (n % i === 0) {
+                        factors.add(i);
+                        factors.add(n / i);
+                    }
+                }
+                return Array.from(factors).sort((a, b) => a - b);
+            }
+
+            // Function to find Euler's totient function φ(n)
+            function eulerTotient(n) {
+                let result = n;
+                for (let p = 2; p * p <= n; p++) {
+                    if (n % p === 0) {
+                        while (n % p === 0) {
+                            n = Math.floor(n / p);
+                        }
+                        result -= Math.floor(result / p);
+                    }
+                }
+                if (n > 1) {
+                    result -= Math.floor(result / n);
+                }
+                return result;
+            }
+
+            // Function to check if a number is a primitive root modulo p
+            function isPrimitiveRoot(g, p) {
+                if (g <= 1 || g >= p) return false;
+
+                const phi = eulerTotient(p);
+                const factors = findFactors(phi);
+
+                for (let i = 0; i < factors.length; i++) {
+                    const factor = factors[i];
+                    if (modExp(g, factor, p) === 1) {
+                        return factor === phi;
+                    }
+                }
+                return false;
+            }
+
+            // Function to find all primitive roots modulo p
+            function findPrimitiveRoots(p) {
+                const roots = [];
+                const phi = eulerTotient(p);
+
+                for (let g = 2; g < p; g++) {
+                    if (isPrimitiveRoot(g, p)) {
+                        roots.push(g);
+                    }
+                }
+                return roots;
+            }
+
+            findBaseBtn.addEventListener('click', function () {
+                const p = parseInt(primeInput.value);
+                if (isNaN(p) || p < 2) {
+                    alert('Please enter a valid prime number first');
+                    return;
+                }
+
+                currentPrime.textContent = p;
+                baseFinder.classList.add('visible');
+            });
+
+            calculateBaseBtn.addEventListener('click', function () {
+                const p = parseInt(primeInput.value);
+                if (isNaN(p) || p < 2) {
+                    alert('Please enter a valid prime number first');
+                    return;
+                }
+
+                const primitiveRoots = findPrimitiveRoots(p);
+
+                if (primitiveRoots.length === 0) {
+                    basesList.innerHTML = '<p>No primitive roots found for this prime.</p>';
+                } else {
+                    basesList.innerHTML = `
+                        <p>Found ${primitiveRoots.length} primitive roots:</p>
+                        <select id="base-select" style="width: 100%; padding: 8px; margin: 10px 0;">
+                            ${primitiveRoots.map(root => `<option value="${root}">${root}</option>`).join('')}
+                        </select>
+                    `;
+                }
+
+                resultPrime.textContent = p;
+                baseResult.classList.add('visible');
+            });
+
+            useBaseBtn.addEventListener('click', function () {
+                const baseSelect = document.getElementById('base-select');
+                if (baseSelect) {
+                    baseInput.value = baseSelect.value;
+                }
+                baseFinder.classList.remove('visible');
+            });
+
+            calculateBtn.addEventListener('click', function () {
+                // Get values from inputs
+                const p = parseInt(primeInput.value);
+                const g = parseInt(baseInput.value);
+                const a = parseInt(secretAInput.value);
+                const b = parseInt(secretBInput.value);
+
+                // Validate inputs
+                if (isNaN(p) || p < 2) {
+                    alert('Please enter a valid prime number (≥ 2)');
+                    return;
+                }
+                if (isNaN(g) || g < 2) {
+                    alert('Please enter a valid base number (≥ 2)');
+                    return;
+                }
+                if (isNaN(a) || a < 1) {
+                    alert('Please enter a valid secret for Alice (≥ 1)');
+                    return;
+                }
+                if (isNaN(b) || b < 1) {
+                    alert('Please enter a valid secret for Bob (≥ 1)');
+                    return;
+                }
+
+                // Update displayed secret values
+                aliceSecret.textContent = a;
+                bobSecret.textContent = b;
+
+                // Calculate public values
+                const A = modExp(g, a, p); // Alice's public value
+                const B = modExp(g, b, p); // Bob's public value
+
+                // Display public values
+                alicePublic.textContent = `${A} (${g}^${a} mod ${p})`;
+                bobPublic.textContent = `${B} (${g}^${b} mod ${p})`;
+
+                // Show exchanged values
+                aliceReceived.textContent = B;
+                bobReceived.textContent = A;
+
+                // Calculate shared secrets
+                const s1 = modExp(B, a, p); // Alice's shared secret
+                const s2 = modExp(A, b, p); // Bob's shared secret
+
+                // Display shared secrets
+                aliceShared.textContent = `${s1} (${B}^${a} mod ${p})`;
+                bobShared.textContent = `${s2} (${A}^${b} mod ${p})`;
+
+                // Show the shared key
+                sharedKeyValue.textContent = s1;
+                sharedKey.classList.add('visible');
+
+                // Verify the shared secrets match
+                if (s1 !== s2) {
+                    alert('Error: Shared secrets do not match! This should not happen with valid inputs.');
+                }
+            });
+
+            // Initialize with default values
+            calculateBtn.click();
+        });
+    </script>
+</body>
+
+</html>
